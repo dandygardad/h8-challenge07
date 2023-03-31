@@ -47,11 +47,11 @@ func (r Repo) GetAll() ([]entity.Book, error) {
 }
 
 func (r Repo) GetOne(id int) (entity.Book, error) {
-	command := `SELECT id, name_book, author FROM books WHERE id=$1`
+	command := `SELECT id, name_book, author, created_at, updated_at FROM books WHERE id=$1`
 	result := r.db.QueryRow(command, id)
 
 	var book entity.Book
-	err := result.Scan(&book.ID, &book.NameBook, &book.Author)
+	err := result.Scan(&book.ID, &book.NameBook, &book.Author, &book.CreatedAt, &book.UpdatedAt)
 	if err != nil {
 		return entity.Book{}, err
 	}
