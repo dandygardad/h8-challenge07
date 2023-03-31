@@ -6,20 +6,20 @@ import (
 )
 
 type BookService interface {
-	CreateBook(book entity.Book) error
+	CreateBook(book entity.Book) (entity.Book, error)
 	GetAllBooks() ([]entity.Book, error)
 	GetBook(id int) (entity.Book, error)
-	UpdateBook(id int, book entity.Book) error
+	UpdateBook(id int, book entity.Book) (entity.Book, error)
 	DeleteBook(id int) error
 }
 
-func (s Service) CreateBook(book entity.Book) error {
-	err := s.repo.Create(book)
+func (s Service) CreateBook(book entity.Book) (entity.Book, error) {
+	result, err := s.repo.Create(entity.Book{NameBook: book.NameBook, Author: book.Author})
 	if err != nil {
-		return err
+		return entity.Book{}, err
 	}
 
-	return nil
+	return result, nil
 }
 
 func (s Service) GetAllBooks() ([]entity.Book, error) {
@@ -44,17 +44,13 @@ func (s Service) GetBook(id int) (entity.Book, error) {
 	return result, nil
 }
 
-func (s Service) UpdateBook(id int, book entity.Book) error {
-	count, err := s.repo.UpdateOne(id, book)
+func (s Service) UpdateBook(id int, book entity.Book) (entity.Book, error) {
+	result, err := s.repo.UpdateOne(id, book)
 	if err != nil {
-		return err
+		return entity.Book{}, err
 	}
 
-	// Jika tidak ada data maka kembalikan error
-	if count < 1 {
-		return errors.New("no data updated")
-	}
-	return nil
+	return result, nil
 }
 
 func (s Service) DeleteBook(id int) error {

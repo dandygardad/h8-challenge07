@@ -2,12 +2,15 @@ package helper
 
 import (
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
-// BadRequestError : Bad request response agar tidak repeat
-func BadRequestError(ctx *gin.Context, msg string) {
-	ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+type ResponseErrorStruct struct {
+	Message string
+	Status  int
+}
+
+func ResponseError(ctx *gin.Context, msg string, status int) {
+	ctx.AbortWithStatusJSON(status, gin.H{
 		"message": msg,
 	})
 }

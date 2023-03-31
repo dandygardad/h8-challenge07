@@ -2,36 +2,31 @@ package repository
 
 import (
 	"challenge07/model/entity"
-	"errors"
+	"time"
 )
 
 type BookRepository interface {
-	Create(book entity.Book) error
+	Create(book entity.Book) (entity.Book, error)
 	GetAll() ([]entity.Book, error)
 	GetOne(id int) (entity.Book, error)
-	UpdateOne(id int, book entity.Book) (int, error)
+	UpdateOne(id int, book entity.Book) (entity.Book, error)
 	DeleteOne(id int) (int, error)
 }
 
-func (r Repo) Create(book entity.Book) error {
+func (r Repo) Create(book entity.Book) (entity.Book, error) {
 	// query sql insert data
-	command := `INSERT INTO books (title, author, "desc") VALUES($1, $2, $3) RETURNING *`
-	result, err := r.db.Exec(command, book.Title, book.Author, book.Desc)
+	var resultBook entity.Book
+	command := `INSERT INTO books (name_book, author) VALUES($1, $2) RETURNING *`
+	err := r.db.QueryRow(command, book.NameBook, book.Author).Scan(&resultBook.ID, &resultBook.NameBook, &resultBook.Author, &resultBook.CreatedAt, &resultBook.UpdatedAt)
 	if err != nil {
-		return err
-	}
-	count, errCreated := result.RowsAffected()
-	if errCreated != nil {
-		return errCreated
+		return entity.Book{}, err
 	}
 
-	if count < 1 {
-		return errors.New("no data created")
-	}
-	return nil
+	return resultBook, nil
 }
+
 func (r Repo) GetAll() ([]entity.Book, error) {
-	command := `SELECT id, title, author, "desc" FROM books`
+	command := `SELECT id, name_book, author, created_at, updated_at FROM books`
 	rows, err := r.db.Query(command)
 	if err != nil {
 		return []entity.Book{}, err
@@ -42,7 +37,7 @@ func (r Repo) GetAll() ([]entity.Book, error) {
 	var allBooks []entity.Book
 	for rows.Next() {
 		tempBook := entity.Book{}
-		err := rows.Scan(&tempBook.ID, &tempBook.Title, &tempBook.Author, &tempBook.Desc)
+		err := rows.Scan(&tempBook.ID, &tempBook.NameBook, &tempBook.Author, &tempBook.CreatedAt, &tempBook.UpdatedAt)
 		if err != nil {
 			return []entity.Book{}, err
 		}
@@ -52,30 +47,27 @@ func (r Repo) GetAll() ([]entity.Book, error) {
 }
 
 func (r Repo) GetOne(id int) (entity.Book, error) {
-	command := `SELECT id, title, author, "desc" FROM books WHERE id=$1`
+	command := `SELECT id, name_book, author FROM books WHERE id=$1`
 	result := r.db.QueryRow(command, id)
 
 	var book entity.Book
-	err := result.Scan(&book.ID, &book.Title, &book.Author, &book.Desc)
+	err := result.Scan(&book.ID, &book.NameBook, &book.Author)
 	if err != nil {
 		return entity.Book{}, err
 	}
 	return book, nil
 }
 
-func (r Repo) UpdateOne(id int, book entity.Book) (int, error) {
-	command := `UPDATE books SET title=$1, author=$2, "desc"=$3 WHERE id=$4`
-	result, err := r.db.Exec(command, book.Title, book.Author, book.Desc, id)
+func (r Repo) UpdateOne(id int, book entity.Book) (entity.Book, error) {
+	var updatedBook entity.Book
+	currentTime := time.Now()
+	command := `UPDATE books SET name_book=$1, author=$2, updated_at=$3 WHERE id=$4 RETURNING *`
+	err := r.db.QueryRow(command, book.NameBook, book.Author, currentTime, id).Scan(&updatedBook.ID, &updatedBook.NameBook, &updatedBook.Author, &updatedBook.CreatedAt, &updatedBook.UpdatedAt)
 	if err != nil {
-		return 0, err
+		return entity.Book{}, err
 	}
 
-	count, errUpdated := result.RowsAffected()
-	if errUpdated != nil {
-		return 0, errUpdated
-	}
-
-	return int(count), nil
+	return updatedBook, nil
 }
 
 func (r Repo) DeleteOne(id int) (int, error) {
